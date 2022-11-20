@@ -6,5 +6,7 @@ insert_final_newline = true
 
 [*.{rs,toml,html}]
 charset = utf-8
+
+[*.{toml,html}]
 indent_style = space
 indent_size = 2

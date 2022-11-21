@@ -14,7 +14,8 @@ pub struct Row {
 pub enum Action {
   Add { after_num: usize },
   ChangeSentence { num: usize, sentence: String },
-  FormatSentence,
+  ChangeDerivation { num: usize, derivation: String },
+  Format,
 }
 
 impl Reducible for State {
@@ -31,6 +32,7 @@ impl Reducible for State {
             derivation: "".to_owned(),
           },
         );
+        // TODO: derivation refs 변경
         State { rows }.into()
       }
       Action::ChangeSentence { num, sentence } => {
@@ -40,7 +42,14 @@ impl Reducible for State {
         }
         State { rows }.into()
       }
-      Action::FormatSentence => {
+      Action::ChangeDerivation { num, derivation } => {
+        let mut rows = self.rows.clone();
+        if let Some(row) = rows.get_mut(num - 1) {
+          row.derivation = derivation;
+        }
+        State { rows }.into()
+      }
+      Action::Format => {
         let rows = self
           .rows
           .iter()

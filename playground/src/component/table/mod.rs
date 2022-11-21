@@ -14,9 +14,9 @@ pub fn table() -> Html {
     }],
   });
 
-  let handle_format_sentence = {
+  let handle_format = {
     let state = state.clone();
-    Callback::from(move |()| state.dispatch(Action::FormatSentence))
+    Callback::from(move |()| state.dispatch(Action::Format))
   };
 
   html! {
@@ -38,6 +38,12 @@ pub fn table() -> Html {
               state.dispatch(Action::ChangeSentence { num, sentence });
             })
           };
+          let handle_change_derivation = {
+            let state = state.clone();
+            Callback::from(move |derivation: String| {
+              state.dispatch(Action::ChangeDerivation { num, derivation });
+            })
+          };
           let handle_append_row = {
             let state = state.clone();
             Callback::from(move |_| state.dispatch(Action::Add { after_num: num }))
@@ -49,7 +55,8 @@ pub fn table() -> Html {
               sentence={AttrValue::from(row.sentence.clone())}
               derivation={AttrValue::from(row.derivation.clone())}
               on_change_sentence={handle_change_sentence}
-              on_format_sentence={handle_format_sentence.clone()}
+              on_change_derivation={handle_change_derivation}
+              on_format={handle_format.clone()}
               on_append_row={handle_append_row}
             />
         }}) }

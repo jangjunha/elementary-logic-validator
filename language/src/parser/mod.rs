@@ -1,4 +1,4 @@
 pub mod expression;
 mod individual_constant;
-mod symbol;
-mod util;
+pub mod symbol;
+pub mod util;

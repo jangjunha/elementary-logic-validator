@@ -14,6 +14,11 @@ pub fn table() -> Html {
     }],
   });
 
+  let handle_format_sentence = {
+    let state = state.clone();
+    Callback::from(move |()| state.dispatch(Action::FormatSentence))
+  };
+
   html! {
     <table class="table-fixed w-full">
       <thead>
@@ -44,6 +49,7 @@ pub fn table() -> Html {
               sentence={AttrValue::from(row.sentence.clone())}
               derivation={AttrValue::from(row.derivation.clone())}
               on_change_sentence={handle_change_sentence}
+              on_format_sentence={handle_format_sentence.clone()}
               on_append_row={handle_append_row}
             />
         }}) }

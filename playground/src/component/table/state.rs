@@ -1,3 +1,4 @@
+use language::parser::expression::exp as parse_exp;
 use yew::Reducible;
 
 pub struct State {
@@ -13,6 +14,7 @@ pub struct Row {
 pub enum Action {
   Add { after_num: usize },
   ChangeSentence { num: usize, sentence: String },
+  FormatSentence,
 }
 
 impl Reducible for State {
@@ -36,6 +38,20 @@ impl Reducible for State {
         if let Some(row) = rows.get_mut(num - 1) {
           row.sentence = sentence;
         }
+        State { rows }.into()
+      }
+      Action::FormatSentence => {
+        let rows = self
+          .rows
+          .iter()
+          .map(|row| {
+            let mut row = row.clone();
+            if let Ok(("", exp)) = parse_exp(&row.sentence.trim()) {
+              row.sentence = exp.to_string();
+            }
+            row
+          })
+          .collect();
         State { rows }.into()
       }
     }

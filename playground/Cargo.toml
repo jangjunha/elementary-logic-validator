@@ -6,4 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+language = { path = "../language" }
+
 yew = "0.19"
+itertools = "0.10"
+web-sys = { version = "0.3", features = ["HtmlInputElement"] }

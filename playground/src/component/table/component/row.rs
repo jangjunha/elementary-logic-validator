@@ -1,6 +1,9 @@
+use crate::hooks::use_memo;
 use itertools::Itertools;
+use language::parser::expression::exp as parse_exp;
 use web_sys::HtmlInputElement;
 use yew::{
+  classes,
   events::{InputEvent, KeyboardEvent},
   function_component, html,
   virtual_dom::AttrValue,
@@ -25,6 +28,14 @@ pub struct RowProps {
 
 #[function_component(Row)]
 pub fn row(props: &RowProps) -> Html {
+  let is_valid = use_memo(
+    |sentence| match parse_exp(sentence.trim()) {
+      Ok(("", _)) => true,
+      _ => false,
+    },
+    props.sentence.clone(),
+  );
+
   let handle_input = {
     let on_change_sentence = props.on_change_sentence.clone();
     Callback::from(move |e: InputEvent| {
@@ -48,8 +59,8 @@ pub fn row(props: &RowProps) -> Html {
     <tr>
       <td>{ &props.dependents.iter().join(",") }</td>
       <td class="text-right">{ &props.num }</td>
-      <td>
-        <input type="text" class="w-full" value={props.sentence.clone()} oninput={handle_input} onkeypress={handle_sentence_keypress} />
+      <td class={classes!(is_valid.then_some("bg-green-200"))}>
+        <input type="text" class="w-full bg-transparent" value={props.sentence.clone()} oninput={handle_input} onkeypress={handle_sentence_keypress} />
       </td>
       <td>
         <input type="text" class="w-full" value={props.derivation.clone()} />

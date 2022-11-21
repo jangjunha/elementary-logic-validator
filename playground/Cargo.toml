@@ -11,3 +11,5 @@ language = { path = "../language" }
 yew = "0.19"
 itertools = "0.10"
 web-sys = { version = "0.3", features = ["HtmlInputElement"] }
+log = "0.4.6"
+wasm-logger = "0.2.0"

@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 #[derive(Clone, PartialEq, Debug)]
 pub enum Exp {
   Atom {
@@ -44,6 +46,71 @@ impl Exp {
       Exp::UnivGenr { variable, form } => format!("({}){}", variable, form.to_string()),
       Exp::ExistGenr { variable, form } => format!("(∃{}){}", variable, form.to_string()),
       Exp::Falsum => "⊥".to_owned(),
+    }
+  }
+
+  pub fn negated(&self) -> Self {
+    Exp::Neg(Box::new(self.clone()))
+  }
+
+  pub fn free_variables(&self) -> BTreeSet<String> {
+    match self {
+      Self::Atom { individuals, .. } => individuals.iter().cloned().collect(),
+      Self::Cond {
+        antecedent: lhs,
+        consequent: rhs,
+      }
+      | Self::Iff { lhs, rhs }
+      | Self::And { lhs, rhs }
+      | Self::Or { lhs, rhs } => ((&lhs.free_variables()) | (&rhs.free_variables())),
+      Self::Neg(lhs) => lhs.free_variables(),
+      Self::UnivGenr { variable, form } | Self::ExistGenr { variable, form } => {
+        let mut vars = form.free_variables();
+        vars.remove(variable);
+        vars
+      }
+      Self::Falsum => BTreeSet::new(),
+    }
+  }
+
+  /// Replace free variable and returns new expression
+  pub fn var_replaced(&self, alpha: &str, beta: &str) -> Self {
+    match self {
+      Self::Atom { predicate, individuals } => Self::Atom {
+        predicate: predicate.clone(),
+        individuals: individuals
+          .iter()
+          .map(|i| if i == alpha { beta.to_owned() } else { i.clone() })
+          .collect(),
+      },
+      Self::Cond { antecedent, consequent } => Self::Cond {
+        antecedent: Box::new(antecedent.var_replaced(alpha, beta)),
+        consequent: Box::new(consequent.var_replaced(alpha, beta)),
+      },
+      Self::Iff { lhs, rhs } => Self::Iff {
+        lhs: Box::new(lhs.var_replaced(alpha, beta)),
+        rhs: Box::new(rhs.var_replaced(alpha, beta)),
+      },
+      Self::And { lhs, rhs } => Self::And {
+        lhs: Box::new(lhs.var_replaced(alpha, beta)),
+        rhs: Box::new(rhs.var_replaced(alpha, beta)),
+      },
+      Self::Or { lhs, rhs } => Self::Or {
+        lhs: Box::new(lhs.var_replaced(alpha, beta)),
+        rhs: Box::new(rhs.var_replaced(alpha, beta)),
+      },
+      Self::Neg(lhs) => Self::Neg(Box::new(lhs.var_replaced(alpha, beta))),
+      Self::UnivGenr { variable, .. } if variable == alpha => self.clone(),
+      Self::UnivGenr { variable, form } => Self::UnivGenr {
+        variable: variable.clone(),
+        form: Box::new(form.var_replaced(alpha, beta)),
+      },
+      Self::ExistGenr { variable, .. } if variable == alpha => self.clone(),
+      Self::ExistGenr { variable, form } => Self::ExistGenr {
+        variable: variable.clone(),
+        form: Box::new(form.var_replaced(alpha, beta)),
+      },
+      Self::Falsum => Self::Falsum,
     }
   }
 }

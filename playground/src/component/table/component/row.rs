@@ -3,7 +3,6 @@ use std::collections::HashSet;
 use crate::hooks::use_memo;
 use itertools::Itertools;
 use language::parser::expression::exp as parse_exp;
-use language_derivation_rule::parser::rule::rule as parse_rule;
 use web_sys::HtmlInputElement;
 use yew::{
   classes,
@@ -22,6 +21,8 @@ pub struct RowProps {
   pub num: usize,
   pub sentence: AttrValue,
   pub derivation: AttrValue,
+  #[prop_or(false)]
+  pub is_derivation_valid: bool,
 
   #[prop_or(Callback::noop())]
   pub on_change_sentence: Callback<String>,
@@ -42,13 +43,6 @@ pub fn row(props: &RowProps) -> Html {
     },
     props.sentence.clone(),
   );
-  let is_derivation_valid = use_memo(
-    |rule| match parse_rule(rule.trim()) {
-      Ok(("", _)) => true,
-      _ => false,
-    },
-    props.derivation.clone(),
-  ); // TODO: row refs도 바른지 검사할 필요
 
   let handle_sentence_input = {
     let on_change_sentence = props.on_change_sentence.clone();
@@ -91,7 +85,7 @@ pub fn row(props: &RowProps) -> Html {
           onkeypress={handle_inputs_keypress.clone()}
         />
       </td>
-      <td class={classes!(is_derivation_valid.then_some("bg-green-200").unwrap_or("bg-orange-200"))}>
+      <td class={classes!(props.is_derivation_valid.then_some("bg-green-200").unwrap_or("bg-orange-200"))}>
         <input
           type="text"
           class="w-full bg-transparent"

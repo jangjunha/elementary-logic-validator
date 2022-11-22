@@ -1,6 +1,7 @@
 mod component;
 mod state;
 
+use itertools::izip;
 use yew::{function_component, html, use_reducer, virtual_dom::AttrValue, Callback};
 
 use self::state::{Action, State};
@@ -25,7 +26,7 @@ pub fn table() -> Html {
         </tr>
       </thead>
       <tbody>
-        { for std::iter::zip(state.rows.iter(), state.deps_list.iter()).enumerate().map(|(idx, (row, dep))| {
+        { for izip!(state.rows.iter(), state.deps_list.iter(), state.rule_vaildity_list.iter()).enumerate().map(|(idx, (row, dep, is_rule_valid))| {
           let num = idx + 1;
           let handle_change_sentence = {
             let state = state.clone();
@@ -50,6 +51,7 @@ pub fn table() -> Html {
               is_dependents_complete={dep.is_complete}
               sentence={AttrValue::from(row.sentence.clone())}
               derivation={AttrValue::from(row.derivation.clone())}
+              is_derivation_valid={*is_rule_valid}
               on_change_sentence={handle_change_sentence}
               on_change_derivation={handle_change_derivation}
               on_format={handle_format.clone()}

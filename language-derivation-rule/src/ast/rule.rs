@@ -29,7 +29,7 @@ impl Rule {
       Rule::OrExclude(dep1, (dep2b, dep2e), (dep3b, dep3e)) => {
         format!("{}, {}-{}, {}-{} ∨E", dep1, dep2b, dep2e, dep3b, dep3e)
       }
-      Rule::IfIntro((Some(dep1), dep2)) => format!("{}, {} →I", dep1, dep2),
+      Rule::IfIntro((Some(dep1b), dep1e)) => format!("{}-{} →I", dep1b, dep1e),
       Rule::IfIntro((None, dep1)) => format!("{} →I", dep1),
       Rule::IfExclude(dep1, dep2) => format!("{}, {} →E", dep1, dep2),
       Rule::IffIntro(dep1, dep2) => format!("{}, {} ↔I", dep1, dep2),

@@ -3,16 +3,11 @@ mod state;
 
 use yew::{function_component, html, use_reducer, virtual_dom::AttrValue, Callback};
 
-use self::state::{Action, Row, State};
+use self::state::{Action, State};
 
 #[function_component(Table)]
 pub fn table() -> Html {
-  let state = use_reducer(|| State {
-    rows: vec![Row {
-      sentence: "".to_owned(),
-      derivation: "".to_owned(),
-    }],
-  });
+  let state = use_reducer(|| State::init());
 
   let handle_format = {
     let state = state.clone();
@@ -30,7 +25,7 @@ pub fn table() -> Html {
         </tr>
       </thead>
       <tbody>
-        { for state.rows.iter().enumerate().map(|(idx, row)| {
+        { for std::iter::zip(state.rows.iter(), state.deps_list.iter()).enumerate().map(|(idx, (row, dep))| {
           let num = idx + 1;
           let handle_change_sentence = {
             let state = state.clone();
@@ -51,7 +46,8 @@ pub fn table() -> Html {
           html! {
             <component::row::Row
               num={num}
-              dependents={vec![]}
+              dependents={dep.nums.clone()}
+              is_dependents_complete={dep.is_complete}
               sentence={AttrValue::from(row.sentence.clone())}
               derivation={AttrValue::from(row.derivation.clone())}
               on_change_sentence={handle_change_sentence}

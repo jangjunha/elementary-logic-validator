@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::hooks::use_memo;
 use itertools::Itertools;
 use language::parser::expression::exp as parse_exp;
@@ -13,8 +15,10 @@ use yew::{
 
 #[derive(Properties, PartialEq)]
 pub struct RowProps {
-  #[prop_or(vec![])]
-  pub dependents: Vec<usize>,
+  #[prop_or(HashSet::from([]))]
+  pub dependents: HashSet<usize>,
+  #[prop_or(false)]
+  pub is_dependents_complete: bool,
   pub num: usize,
   pub sentence: AttrValue,
   pub derivation: AttrValue,
@@ -74,9 +78,11 @@ pub fn row(props: &RowProps) -> Html {
 
   html! {
     <tr>
-      <td>{ &props.dependents.iter().join(",") }</td>
+      <td class={classes!(props.is_dependents_complete.then_some("").unwrap_or("bg-orange-200"))}>
+        { &props.dependents.iter().join(",") }
+      </td>
       <td class="text-right">{ &props.num }</td>
-      <td class={classes!(is_sentence_valid.then_some("bg-green-200"))}>
+      <td class={classes!(is_sentence_valid.then_some("bg-green-200").unwrap_or("bg-orange-200"))}>
         <input
           type="text"
           class="w-full bg-transparent"
@@ -85,7 +91,7 @@ pub fn row(props: &RowProps) -> Html {
           onkeypress={handle_inputs_keypress.clone()}
         />
       </td>
-      <td class={classes!(is_derivation_valid.then_some("bg-green-200"))}>
+      <td class={classes!(is_derivation_valid.then_some("bg-green-200").unwrap_or("bg-orange-200"))}>
         <input
           type="text"
           class="w-full bg-transparent"

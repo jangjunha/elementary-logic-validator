@@ -1,4 +1,5 @@
 use language::parser::expression::exp as parse_exp;
+use language_derivation_rule::parser::rule::rule as parse_rule;
 use yew::Reducible;
 
 pub struct State {
@@ -57,6 +58,9 @@ impl Reducible for State {
             let mut row = row.clone();
             if let Ok(("", exp)) = parse_exp(&row.sentence.trim()) {
               row.sentence = exp.to_string();
+            }
+            if let Ok(("", rule)) = parse_rule(&row.derivation.trim()) {
+              row.derivation = rule.to_string();
             }
             row
           })

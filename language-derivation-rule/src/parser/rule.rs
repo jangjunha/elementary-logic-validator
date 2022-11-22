@@ -16,15 +16,15 @@ use language::parser::{
 
 use crate::ast::rule::Rule;
 
-fn num(s: &str) -> IResult<&str, i32> {
-  map_res(digit1, |s: &str| s.parse::<i32>())(s)
+fn num(s: &str) -> IResult<&str, usize> {
+  map_res(digit1, |s: &str| s.parse::<usize>())(s)
 }
 
 fn sep(s: &str) -> IResult<&str, &str> {
   ws(tag(","))(s)
 }
 
-fn range(s: &str) -> IResult<&str, (i32, i32)> {
+fn range(s: &str) -> IResult<&str, (usize, usize)> {
   separated_pair(num, ws(tag("-")), num)(s)
 }
 

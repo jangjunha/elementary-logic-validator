@@ -1,5 +1,5 @@
 use std::{
-  collections::HashSet,
+  collections::{BTreeSet, HashSet},
   ops::{BitOr, Sub},
 };
 
@@ -183,23 +183,17 @@ impl State {
           Rule::AndExclude(k) => RowDependency::new() | acc.get(ntoi(*k)),
           Rule::OrIntro(k, l) => RowDependency::new() | acc.get(ntoi(*k)) | l.and_then(|l| acc.get(l + 1)),
           Rule::OrExclude(k, (l0, l1), (m0, m1)) => {
-            (RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l1)) | acc.get(ntoi(*m1)))
-              - (ntoi(*l0))
-              - (ntoi(*m0))
+            (RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l1)) | acc.get(ntoi(*m1))) - (*l0) - (*m0)
           }
-          Rule::IfIntro((k0, k1)) => (RowDependency::new() | acc.get(ntoi(*k1))) - (k0.map(ntoi)),
+          Rule::IfIntro((k0, k1)) => (RowDependency::new() | acc.get(ntoi(*k1))) - *k0,
           Rule::IfExclude(k, l) => RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l)),
           Rule::Falsum(k) => RowDependency::new() | acc.get(ntoi(*k)),
-          Rule::NegIntro((k0, k1)) | Rule::NegExclude((k0, k1)) => {
-            (RowDependency::new() | acc.get(ntoi(*k1))) - (ntoi(*k0))
-          }
+          Rule::NegIntro((k0, k1)) | Rule::NegExclude((k0, k1)) => (RowDependency::new() | acc.get(ntoi(*k1))) - *k0,
           Rule::IffIntro(k, l) => RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l)),
           Rule::IffExclude(k) => RowDependency::new() | acc.get(ntoi(*k)),
           Rule::UnivQuntIntro(k) | Rule::UnivQuntExclude(k) => RowDependency::new() | acc.get(ntoi(*k)),
           Rule::ExisQuntIntro(k) => RowDependency::new() | acc.get(ntoi(*k)),
-          Rule::ExisQuntExclude(k, (l0, l1)) => {
-            (RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l1))) - (ntoi(*l0))
-          }
+          Rule::ExisQuntExclude(k, (l0, l1)) => (RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l1))) - *l0,
         },
         Err(_) => RowDependency::new_incomplete(),
       };
@@ -213,6 +207,13 @@ impl State {
   fn get_rules_validity(&self) -> Vec<bool> {
     fn ntoi(num: usize) -> usize {
       num - 1
+    }
+    fn one_or_none(set: &BTreeSet<String>) -> Option<String> {
+      if set.len() == 1 {
+        set.iter().next().map(|e| e.clone())
+      } else {
+        None
+      }
     }
     fn unordered_tuple_eq((a1, a2): (&Exp, &Exp), (b1, b2): (&Exp, &Exp)) -> bool {
       ((a1 == b1) && (a2 == b2)) || ((a1 == b2) && (a2 == b1))
@@ -238,42 +239,64 @@ impl State {
 
     items
       .iter()
-      .map(|(row_exp, row_rule)| match (row_exp, row_rule) {
-        (Ok(row_exp), Ok(row_rule)) => match *row_rule {
+      .map(|(exp_row, rule_row)| {
+        let (exp_row, rule_row) = match (exp_row, rule_row) {
+          (Ok(exp_row), Ok(rule_row)) => (exp_row, rule_row),
+          _ => return false,
+        };
+
+        match *rule_row {
           Rule::Premise => true,
-          Rule::AndIntro(k, l) => match (items.get(ntoi(k)), items.get(ntoi(l))) {
-            (Some((Ok(exp_k), _)), Some((Ok(exp_l), _))) => match row_exp {
+
+          Rule::AndIntro(k, l) => {
+            let (exp_k, exp_l) = match (items.get(ntoi(k)), items.get(ntoi(l))) {
+              (Some((Ok(exp_k), _)), Some((Ok(exp_l), _))) => (exp_k, exp_l),
+              _ => return false,
+            };
+            match exp_row {
               Exp::And { lhs, rhs } => (**lhs == *exp_k) && (**rhs == *exp_l),
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::AndExclude(k) => match items.get(ntoi(k)) {
-            Some((Ok(exp_k), _)) => match exp_k {
+            }
+          }
+
+          Rule::AndExclude(k) => {
+            let exp_k = match items.get(ntoi(k)) {
+              Some((Ok(exp_k), _)) => exp_k,
+              _ => return false,
+            };
+            match exp_k {
               Exp::And {
                 lhs: exp_k_lhs,
                 rhs: exp_k_rhs,
-              } => (*row_exp == **exp_k_lhs) || (*row_exp == **exp_k_rhs),
+              } => (*exp_row == **exp_k_lhs) || (*exp_row == **exp_k_rhs),
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::OrIntro(k, None) => match items.get(ntoi(k)) {
-            Some((Ok(exp_k), _)) => match row_exp {
+            }
+          }
+
+          Rule::OrIntro(k, None) => {
+            let exp_k = match items.get(ntoi(k)) {
+              Some((Ok(exp_k), _)) => exp_k,
+              _ => return false,
+            };
+            match exp_row {
               Exp::Or { lhs, rhs } => (*exp_k == **lhs) || (*exp_k == **rhs),
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::OrIntro(k, Some(l)) => match (items.get(ntoi(k)), items.get(ntoi(l))) {
-            (Some((Ok(exp_k), _)), Some((Ok(exp_l), _))) => match row_exp {
+            }
+          }
+
+          Rule::OrIntro(k, Some(l)) => {
+            let (exp_k, exp_l) = match (items.get(ntoi(k)), items.get(ntoi(l))) {
+              (Some((Ok(exp_k), _)), Some((Ok(exp_l), _))) => (exp_k, exp_l),
+              _ => return false,
+            };
+            match exp_row {
               Exp::Or { lhs, rhs } => unordered_tuple_eq((exp_k, exp_l), (lhs, rhs)),
               _ => false,
-            },
-            _ => false,
-          },
+            }
+          }
+
           Rule::OrExclude(k, (l0, l1), (m0, m1)) => {
-            match (
+            let (exp_k, exp_l0, rule_l0, exp_l1, exp_m0, rule_m0, exp_m1) = match (
               items.get(ntoi(k)),
               items.get(ntoi(l0)),
               items.get(ntoi(l1)),
@@ -283,43 +306,59 @@ impl State {
               (
                 Some((Ok(exp_k), _)),
                 Some((Ok(exp_l0), Ok(rule_l0))),
-                Some((Ok(exp_l1), Ok(rule_l1))),
-                Some((Ok(exp_m0), _)),
+                Some((Ok(exp_l1), _)),
+                Some((Ok(exp_m0), Ok(rule_m0))),
                 Some((Ok(exp_m1), _)),
-              ) => match (exp_k, rule_l0, rule_l1) {
-                (
-                  Exp::Or {
-                    lhs: exp_k_lhs,
-                    rhs: exp_k_rhs,
-                  },
-                  Rule::Premise,
-                  Rule::Premise,
-                ) => {
-                  unordered_tuple_eq((exp_k_lhs, exp_k_rhs), (exp_l0, exp_m0))
-                    && (row_exp == exp_l1)
-                    && (row_exp == exp_m1)
-                }
-                _ => false,
-              },
+              ) => (exp_k, exp_l0, rule_l0, exp_l1, exp_m0, rule_m0, exp_m1),
+              _ => return false,
+            };
+            match (exp_k, rule_l0, rule_m0) {
+              (
+                Exp::Or {
+                  lhs: exp_k_lhs,
+                  rhs: exp_k_rhs,
+                },
+                Rule::Premise,
+                Rule::Premise,
+              ) => {
+                unordered_tuple_eq((exp_k_lhs, exp_k_rhs), (exp_l0, exp_m0))
+                  && (exp_row == exp_l1)
+                  && (exp_row == exp_m1)
+              }
               _ => false,
             }
           }
-          Rule::IfIntro((Some(k0), k1)) => match (items.get(ntoi(k0)), items.get(ntoi(k1))) {
-            (Some((Ok(exp_k0), Ok(Rule::Premise))), Some((Ok(exp_k1), _))) => match row_exp {
-              Exp::Cond { antecedent, consequent } => (*exp_k0 == **antecedent) && (*exp_k1 == **consequent),
+
+          Rule::IfIntro((Some(k0), k1)) => {
+            let (exp_k0, rule_k0, exp_k1) = match (items.get(ntoi(k0)), items.get(ntoi(k1))) {
+              (Some((Ok(exp_k0), Ok(rule_k0))), Some((Ok(exp_k1), _))) => (exp_k0, rule_k0, exp_k1),
+              _ => return false,
+            };
+            match (exp_row, rule_k0) {
+              (Exp::Cond { antecedent, consequent }, Rule::Premise) => {
+                (*exp_k0 == **antecedent) && (*exp_k1 == **consequent)
+              }
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::IfIntro((None, k)) => match items.get(ntoi(k)) {
-            Some((Ok(exp_k), _)) => match row_exp {
+            }
+          }
+
+          Rule::IfIntro((None, k)) => {
+            let exp_k = match items.get(ntoi(k)) {
+              Some((Ok(exp_k), _)) => exp_k,
+              _ => return false,
+            };
+            match exp_row {
               Exp::Cond { consequent, .. } => *exp_k == **consequent,
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::IfExclude(k, l) => match (items.get(ntoi(k)), items.get(ntoi(l))) {
-            (Some((Ok(exp_k), _)), Some((Ok(exp_l), _))) => match (row_exp, exp_l) {
+            }
+          }
+
+          Rule::IfExclude(k, l) => {
+            let (exp_k, exp_l) = match (items.get(ntoi(k)), items.get(ntoi(l))) {
+              (Some((Ok(exp_k), _)), Some((Ok(exp_l), _))) => (exp_k, exp_l),
+              _ => return false,
+            };
+            match (exp_row, exp_k) {
               (Exp::Falsum, _) => (exp_k.negated() == *exp_l) || (*exp_k == exp_l.negated()),
               (
                 _,
@@ -327,13 +366,17 @@ impl State {
                   antecedent: exp_k_antecedent,
                   consequent: exp_k_consequent,
                 },
-              ) => (**exp_k_antecedent == *exp_l) && (**exp_k_consequent == *row_exp),
+              ) => (**exp_k_antecedent == *exp_l) && (**exp_k_consequent == *exp_row),
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::IffIntro(k, l) => match (items.get(ntoi(k)), items.get(ntoi(l))) {
-            (Some((Ok(exp_k), _)), Some((Ok(exp_l), _))) => match (row_exp, exp_k, exp_l) {
+            }
+          }
+
+          Rule::IffIntro(k, l) => {
+            let (exp_k, exp_l) = match (items.get(ntoi(k)), items.get(ntoi(l))) {
+              (Some((Ok(exp_k), _)), Some((Ok(exp_l), _))) => (exp_k, exp_l),
+              _ => return false,
+            };
+            match (exp_row, exp_k, exp_l) {
               (
                 Exp::Iff { lhs, rhs },
                 Exp::Cond {
@@ -350,11 +393,15 @@ impl State {
                   && (*exp_k_consequent == *exp_l_antecedent)
               }
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::IffExclude(k) => match items.get(ntoi(k)) {
-            Some((Ok(exp_k), _)) => match (row_exp, exp_k) {
+            }
+          }
+
+          Rule::IffExclude(k) => {
+            let exp_k = match items.get(ntoi(k)) {
+              Some((Ok(exp_k), _)) => exp_k,
+              _ => return false,
+            };
+            match (exp_row, exp_k) {
               (
                 Exp::Cond { antecedent, consequent },
                 Exp::Iff {
@@ -363,128 +410,137 @@ impl State {
                 },
               ) => unordered_tuple_eq((antecedent, consequent), (exp_k_lhs, exp_k_rhs)),
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::Falsum(k) => match items.get(ntoi(k)) {
-            Some((Ok(exp_k), _)) => *exp_k == Exp::Falsum,
-            _ => false,
-          },
-          Rule::NegIntro((k0, k1)) => match (items.get(ntoi(k0)), items.get(ntoi(k1))) {
-            (Some((Ok(exp_k0), _)), Some((Ok(exp_k1), _))) => match (row_exp, exp_k1) {
+            }
+          }
+
+          Rule::Falsum(k) => {
+            let exp_k = match items.get(ntoi(k)) {
+              Some((Ok(exp_k), _)) => exp_k,
+              _ => return false,
+            };
+            *exp_k == Exp::Falsum
+          }
+
+          Rule::NegIntro((k0, k1)) => {
+            let (exp_k0, exp_k1) = match (items.get(ntoi(k0)), items.get(ntoi(k1))) {
+              (Some((Ok(exp_k0), _)), Some((Ok(exp_k1), _))) => (exp_k0, exp_k1),
+              _ => return false,
+            };
+            match (exp_row, exp_k1) {
               (Exp::Neg(negated), Exp::Falsum) => **negated == *exp_k0,
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::NegExclude((k0, k1)) => match (items.get(ntoi(k0)), items.get(ntoi(k1))) {
-            (Some((Ok(exp_k0), _)), Some((Ok(exp_k1), _))) => match (row_exp, exp_k0, exp_k1) {
-              (exp, Exp::Neg(exp_k_negated), Exp::Falsum) => *exp == **exp_k_negated,
-              _ => false,
-            },
-            _ => false,
-          },
-          Rule::UnivQuntIntro(k) => match items.get(ntoi(k)) {
-            Some((Ok(exp_k), _)) => match row_exp {
-              Exp::UnivGenr { variable, form: inner } => {
-                let src_vars = exp_k.free_variables();
-                let inn_vars = inner.free_variables();
-                if let Some(beta) = src_vars.difference(&inn_vars).next() {
-                  if let Some(deps) = self.deps_list.get(ntoi(k)) {
-                    if deps.nums.iter().any(|&dep_num| {
-                      if let Some((Ok(dep_exp), _)) = items.get(ntoi(dep_num)) {
-                        dep_exp.free_variables().contains(beta)
-                      } else {
-                        true
-                      }
-                    }) {
-                      return false;
-                    }
-                  } else {
-                    return false;
-                  }
-                  inner.var_replaced(&variable, beta) == *exp_k
-                } else {
-                  false
-                }
-              }
-              _ => false,
-            },
-            _ => false,
-          },
-          Rule::UnivQuntExclude(k) => match items.get(ntoi(k)) {
-            Some((
-              Ok(Exp::UnivGenr {
-                variable: exp_k_var,
-                form: exp_k_inner,
-              }),
-              _,
-            )) => {
-              // FIXME: 여기선 k에 등장하는 변수를 써도 됨
-              let dst_vars = row_exp.free_variables();
-              let inn_vars = exp_k_inner.free_variables();
-              if let Some(beta) = dst_vars.difference(&inn_vars).next() {
-                exp_k_inner.var_replaced(&exp_k_var, beta) == *row_exp
-              } else {
-                false
-              }
             }
-            _ => false,
-          },
-          Rule::ExisQuntIntro(k) => match items.get(ntoi(k)) {
-            Some((Ok(exp_k), _)) => match row_exp {
-              Exp::ExistGenr { variable, form: inner } => {
-                let src_vars = exp_k.free_variables();
-                let inn_vars = inner.free_variables();
-                // FIXME: 여기선 k에 등장하는 변수를 써도 됨
-                if let Some(beta) = src_vars.difference(&inn_vars).next() {
-                  inner.var_replaced(&variable, beta) == *exp_k
-                } else {
-                  false
-                }
-              }
+          }
+
+          Rule::NegExclude((k0, k1)) => {
+            let (exp_k0, exp_k1) = match (items.get(ntoi(k0)), items.get(ntoi(k1))) {
+              (Some((Ok(exp_k0), _)), Some((Ok(exp_k1), _))) => (exp_k0, exp_k1),
+              _ => return false,
+            };
+            match (exp_row, exp_k0, exp_k1) {
+              (exp_row, Exp::Neg(exp_k_negated), Exp::Falsum) => *exp_row == **exp_k_negated,
               _ => false,
-            },
-            _ => false,
-          },
-          Rule::ExisQuntExclude(k, (l, m)) => match (items.get(ntoi(k)), items.get(ntoi(l)), items.get(ntoi(m))) {
-            (
-              Some((
-                Ok(Exp::ExistGenr {
-                  variable: exp_k_var,
-                  form: exp_k_inner,
-                }),
-                _,
-              )),
-              Some((Ok(exp_l), Ok(Rule::Premise))),
-              Some((Ok(exp_m), _)),
-            ) => {
-              let k_inn_vars = exp_k_inner.free_variables();
-              let l_vars = exp_l.free_variables();
-              let m_vars = exp_m.free_variables();
-              if let Some(beta) = (&l_vars - &k_inn_vars).difference(&m_vars).next() {
-                if let Some(deps) = self.deps_list.get(ntoi(m)) {
-                  if deps.nums.iter().filter(|&n| *n != l).any(|&dep_num| {
-                    if let Some((Ok(dep_exp), _)) = items.get(ntoi(dep_num)) {
-                      dep_exp.free_variables().contains(beta)
-                    } else {
-                      true
-                    }
-                  }) {
-                    return false;
-                  }
-                } else {
+            }
+          }
+
+          Rule::UnivQuntIntro(k) => {
+            let exp_k = match items.get(ntoi(k)) {
+              Some((Ok(exp_k), _)) => exp_k,
+              _ => return false,
+            };
+            match exp_row {
+              Exp::UnivGenr { variable, form: inner } => {
+                let beta = match one_or_none(&(&exp_k.free_variables() - &inner.free_variables())) {
+                  Some(beta) => beta,
+                  None => return false,
+                };
+                let deps = match self.deps_list.get(ntoi(k)) {
+                  Some(deps) => deps,
+                  None => return false,
+                };
+                if deps.nums.iter().any(|&num_dep| {
+                  let exp_dep = match items.get(ntoi(num_dep)) {
+                    Some((Ok(exp_dep), _)) => exp_dep,
+                    _ => return true,
+                  };
+                  exp_dep.free_variables().contains(&beta)
+                }) {
                   return false;
                 }
-                (exp_k_inner.var_replaced(&exp_k_var, beta) == *exp_l) && (exp_m == row_exp)
-              } else {
-                false
+                inner.var_replaced(&variable, &beta) == *exp_k
               }
+              _ => false,
             }
-            _ => false,
-          },
-        },
-        _ => false,
+          }
+
+          Rule::UnivQuntExclude(k) => {
+            let exp_k = match items.get(ntoi(k)) {
+              Some((Ok(exp_k), _)) => exp_k,
+              _ => return false,
+            };
+
+            match exp_k {
+              Exp::UnivGenr { variable: alpha, form } => {
+                let beta = match one_or_none(&(&exp_row.free_variables() - &form.free_variables())) {
+                  Some(beta) => beta,
+                  None => return false,
+                };
+                form.var_replaced(&alpha, &beta) == *exp_row
+              }
+              _ => false,
+            }
+          }
+
+          Rule::ExisQuntIntro(k) => {
+            let exp_k = match items.get(ntoi(k)) {
+              Some((Ok(exp_k), _)) => exp_k,
+              _ => return false,
+            };
+            match exp_row {
+              Exp::ExistGenr { variable: alpha, form } => {
+                let beta = match one_or_none(&(&exp_k.free_variables() - &form.free_variables())) {
+                  Some(beta) => beta,
+                  None => return false,
+                };
+                form.var_replaced(&alpha, &beta) == *exp_k
+              }
+              _ => false,
+            }
+          }
+
+          Rule::ExisQuntExclude(k, (l, m)) => {
+            let (exp_k, exp_l, rule_l, exp_m) = match (items.get(ntoi(k)), items.get(ntoi(l)), items.get(ntoi(m))) {
+              (Some((Ok(exp_k), _)), Some((Ok(exp_l), Ok(rule_l))), Some((Ok(exp_m), _))) => {
+                (exp_k, exp_l, rule_l, exp_m)
+              }
+              _ => return false,
+            };
+            match (exp_k, rule_l) {
+              (Exp::ExistGenr { variable: alpha, form }, Rule::Premise) => {
+                let beta =
+                  match one_or_none(&(&(&exp_l.free_variables() - &form.free_variables()) - &exp_m.free_variables())) {
+                    Some(beta) => beta,
+                    None => return false,
+                  };
+                let deps = match self.deps_list.get(ntoi(m)) {
+                  Some(deps) => deps,
+                  _ => return false,
+                };
+                if deps.nums.iter().filter(|&n| *n != l).any(|&num_dep| {
+                  let exp_dep = match items.get(ntoi(num_dep)) {
+                    Some((Ok(exp_dep), _)) => exp_dep,
+                    _ => return true,
+                  };
+                  exp_dep.free_variables().contains(&beta)
+                }) {
+                  return false;
+                }
+                (form.var_replaced(&alpha, &beta) == *exp_l) && (exp_m == exp_row)
+              }
+              _ => false,
+            }
+          }
+        }
       })
       .collect_vec()
   }

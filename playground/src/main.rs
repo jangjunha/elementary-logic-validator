@@ -36,20 +36,20 @@ fn switch(routes: &Route) -> Html {
 #[function_component(App)]
 fn app() -> Html {
   html! {
-    <div class="prose max-w-2xl mx-auto my-16">
-      <h1>{"1차논리 검증기"}</h1>
+    <BrowserRouter>
+      <div class="prose max-w-2xl mx-auto my-16">
+        <h1>{"1차논리 검증기"}</h1>
 
-      <BrowserRouter>
         <Switch<Route> render={Switch::render(switch)} />
-      </BrowserRouter>
 
-      <footer class="my-16 border-t text-center">
-        <p>
-          <a href="/">{"검증기"}</a>{" "}
-          <a href="/help/">{"정보 및 도움말"}</a>
-        </p>
-      </footer>
-    </div>
+        <footer class="my-16 border-t text-center">
+          <p>
+            <Link<Route> to={Route::Home}>{"검증기"}</Link<Route>>{" "}
+            <Link<Route> to={Route::HelpHome}>{"정보 및 도움말"}</Link<Route>>
+          </p>
+        </footer>
+      </div>
+    </BrowserRouter>
   }
 }
 

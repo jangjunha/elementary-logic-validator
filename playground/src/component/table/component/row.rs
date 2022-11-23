@@ -73,7 +73,7 @@ pub fn row(props: &RowProps) -> Html {
   html! {
     <tr>
       <td class={classes!(props.is_dependents_complete.then_some("").unwrap_or("bg-orange-200"))}>
-        { &props.dependents.iter().join(",") }
+        { &props.dependents.iter().sorted_unstable().join(",") }
       </td>
       <td class="text-right">{ &props.num }</td>
       <td class={classes!(is_sentence_valid.then_some("bg-green-200").unwrap_or("bg-orange-200"))}>

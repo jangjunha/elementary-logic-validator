@@ -14,6 +14,9 @@ use yew::{
 
 #[derive(Properties, PartialEq)]
 pub struct RowProps {
+  #[prop_or(false)]
+  pub readonly: bool,
+
   #[prop_or(HashSet::from([]))]
   pub dependents: HashSet<usize>,
   #[prop_or(false)]
@@ -81,6 +84,7 @@ pub fn row(props: &RowProps) -> Html {
           type="text"
           class="w-full bg-transparent"
           value={props.sentence.clone()}
+          readonly={props.readonly}
           oninput={handle_sentence_input}
           onkeypress={handle_inputs_keypress.clone()}
         />
@@ -90,6 +94,7 @@ pub fn row(props: &RowProps) -> Html {
           type="text"
           class="w-full bg-transparent"
           value={props.derivation.clone()}
+          readonly={props.readonly}
           oninput={handle_derivation_input}
           onkeypress={handle_inputs_keypress}
         />

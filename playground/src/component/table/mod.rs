@@ -3,13 +3,25 @@ mod parser;
 mod state;
 
 use itertools::izip;
-use yew::{function_component, html, use_reducer, virtual_dom::AttrValue, Callback};
+use yew::{function_component, html, use_reducer, virtual_dom::AttrValue, Callback, Properties};
 
+pub use self::state::Row;
 use self::state::{Action, State};
 
+#[derive(Properties, PartialEq)]
+pub struct TableProps {
+  #[prop_or(None)]
+  pub default_value: Option<Vec<Row>>,
+  #[prop_or(false)]
+  pub readonly: bool,
+}
+
 #[function_component(Table)]
-pub fn table() -> Html {
-  let state = use_reducer(|| State::init());
+pub fn table(props: &TableProps) -> Html {
+  let state = use_reducer(|| match &props.default_value {
+    Some(rows) => State::init_from(rows.clone()),
+    None => State::init(),
+  });
 
   let handle_format = {
     let state = state.clone();
@@ -47,6 +59,7 @@ pub fn table() -> Html {
           };
           html! {
             <component::row::Row
+              readonly={props.readonly}
               num={num}
               dependents={dep.nums.clone()}
               is_dependents_complete={dep.is_complete}

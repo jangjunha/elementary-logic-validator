@@ -20,7 +20,7 @@ pub struct State {
   pub rule_vaildity_list: Vec<bool>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Row {
   pub sentence: String,
   pub derivation: String,
@@ -43,6 +43,16 @@ impl State {
       deps_list: vec![RowDependency::new_incomplete()],
       rule_vaildity_list: vec![false],
     }
+  }
+
+  pub fn init_from(rows: Vec<Row>) -> Self {
+    let mut state = State {
+      rows,
+      deps_list: vec![],
+      rule_vaildity_list: vec![],
+    };
+    state.reload_computed_properties();
+    state
   }
 }
 
@@ -151,6 +161,11 @@ impl Reducible for State {
 }
 
 impl State {
+  pub fn reload_computed_properties(&mut self) {
+    self.deps_list = self.get_deps_for_rows();
+    self.rule_vaildity_list = self.get_rules_validity();
+  }
+
   pub fn get_deps_for_rows(&self) -> Vec<RowDependency> {
     fn iton(idx: usize) -> usize {
       idx + 1

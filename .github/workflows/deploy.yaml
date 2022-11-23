@@ -41,7 +41,7 @@ jobs:
       - name: Build
         run: |
           cd playground/
-          trunk build --public-url="/elementary-logic-validator/"
+          trunk build
 
       - name: Upload built site
         uses: actions/upload-pages-artifact@v1

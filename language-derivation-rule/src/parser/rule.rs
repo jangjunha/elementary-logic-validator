@@ -71,10 +71,16 @@ fn or_exclude(s: &str) -> IResult<&str, Rule> {
 fn if_intro(s: &str) -> IResult<&str, Rule> {
   map(
     terminated(
-      pair(opt(terminated(num, ws(tag("-")))), num),
+      pair(num, opt(preceded(ws(tag("-")), num))),
+      //pair(opt(terminated(num, ws(tag("-")))), num),
       preceded(multispace1, pair(right_arrow, tag("I"))),
     ),
-    |(k, l)| Rule::IfIntro((k, l)),
+    |(k, l)| {
+      Rule::IfIntro(match (k, l) {
+        (k, None) => (None, k),
+        (k, Some(l)) => (Some(k), l),
+      })
+    },
   )(s)
 }
 
@@ -190,6 +196,7 @@ mod tests {
       IResult::Ok(("", Rule::OrExclude(1, (3, 4), (6, 7))))
     );
     assert_eq!(rule("3 →I"), IResult::Ok(("", Rule::IfIntro((None, 3)))));
+    assert_eq!(rule("2 ->I"), IResult::Ok(("", Rule::IfIntro((None, 2)))));
     assert_eq!(rule("2-3 →I"), IResult::Ok(("", Rule::IfIntro((Some(2), 3)))));
     assert_eq!(rule("7-14 →I"), IResult::Ok(("", Rule::IfIntro((Some(7), 14)))));
     assert_eq!(rule("1,3 ->E"), IResult::Ok(("", Rule::IfExclude(1, 3))));

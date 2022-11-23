@@ -17,13 +17,13 @@ pub fn table() -> Html {
   };
 
   html! {
-    <table class="table-fixed w-full">
+    <table class="table-fixed w-full font-mono">
       <thead>
         <tr>
           <th class="w-24">{"전제번호"}</th>
           <th class="w-8">{"#"}</th>
           <th class="">{"식"}</th>
-          <th class="w-32">{"도출규칙"}</th>
+          <th class="w-36">{"도출규칙"}</th>
         </tr>
       </thead>
       <tbody>

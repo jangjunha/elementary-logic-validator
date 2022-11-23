@@ -14,6 +14,8 @@ use yew::{
 
 #[derive(Properties, PartialEq)]
 pub struct RowProps {
+  #[prop_or(AttrValue::from(""))]
+  pub class: AttrValue,
   #[prop_or(false)]
   pub readonly: bool,
 
@@ -74,22 +76,29 @@ pub fn row(props: &RowProps) -> Html {
   };
 
   html! {
-    <tr>
-      <td class={classes!(props.is_dependents_complete.then_some("").unwrap_or("bg-orange-200"))}>
+    <tr class={classes!(props.class.to_string())}>
+      <td class={classes!(props.is_dependents_complete.then_some("").unwrap_or("bg-red-200"))}>
         { &props.dependents.iter().sorted_unstable().join(",") }
       </td>
       <td class="text-right">{ &props.num }</td>
-      <td class={classes!(is_sentence_valid.then_some("bg-green-200").unwrap_or("bg-orange-200"))}>
+      <td>
         <input
           type="text"
-          class="w-full bg-transparent"
+          class={classes!(
+            "w-full",
+            "bg-transparent",
+            "border-b",
+            is_sentence_valid
+              .then_some("border-b-transparent")
+              .unwrap_or("border-b-red-400 focus:border-b-transparent focus:outline focus:outline-2 focus:outline-red-400"),
+          )}
           value={props.sentence.clone()}
           readonly={props.readonly}
           oninput={handle_sentence_input}
           onkeypress={handle_inputs_keypress.clone()}
         />
       </td>
-      <td class={classes!(props.is_derivation_valid.then_some("bg-green-200").unwrap_or("bg-orange-200"))}>
+      <td class={classes!(props.is_derivation_valid.then_some("bg-green-100").unwrap_or("bg-red-200"))}>
         <input
           type="text"
           class="w-full bg-transparent"

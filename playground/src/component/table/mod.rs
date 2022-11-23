@@ -2,8 +2,10 @@ mod component;
 mod parser;
 mod state;
 
+use std::collections::HashSet;
+
 use itertools::izip;
-use yew::{function_component, html, use_reducer, virtual_dom::AttrValue, Callback, Properties};
+use yew::{classes, function_component, html, html_nested, use_reducer, virtual_dom::AttrValue, Callback, Properties};
 
 pub use self::state::Row;
 use self::state::{Action, State};
@@ -28,6 +30,12 @@ pub fn table(props: &TableProps) -> Html {
     Callback::from(move |()| state.dispatch(Action::Format))
   };
 
+  let consequent_deps = state
+    .deps_list
+    .last()
+    .map(|dep| dep.nums.clone())
+    .unwrap_or_else(HashSet::new);
+  let length = state.rows.len();
   html! {
     <table class="table-fixed w-full font-mono">
       <thead>
@@ -41,6 +49,7 @@ pub fn table(props: &TableProps) -> Html {
       <tbody>
         { for izip!(state.rows.iter(), state.deps_list.iter(), state.rule_vaildity_list.iter()).enumerate().map(|(idx, (row, dep, is_rule_valid))| {
           let num = idx + 1;
+          let is_last = num == length;
           let handle_change_sentence = {
             let state = state.clone();
             Callback::from(move |sentence: String| {
@@ -57,8 +66,12 @@ pub fn table(props: &TableProps) -> Html {
             let state = state.clone();
             Callback::from(move |_| state.dispatch(Action::Add { after_num: num }))
           };
-          html! {
+          html_nested! {
             <component::row::Row
+              class={classes!(
+                is_last.then_some("border-t-4 border-double border-t-gray-300"),
+                consequent_deps.contains(&num).then_some("bg-gray-100"),
+              )}
               readonly={props.readonly}
               num={num}
               dependents={dep.nums.clone()}

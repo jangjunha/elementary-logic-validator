@@ -10,6 +10,7 @@ language = { path = "../language" }
 language-derivation-rule = { path = "../language-derivation-rule" }
 
 yew = "0.19"
+yew-router = "0.16"
 itertools = "0.10"
 web-sys = { version = "0.3", features = ["HtmlInputElement"] }
 log = "0.4.6"

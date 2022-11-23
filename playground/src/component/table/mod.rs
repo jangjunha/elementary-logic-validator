@@ -1,4 +1,5 @@
 mod component;
+mod parser;
 mod state;
 
 use itertools::izip;

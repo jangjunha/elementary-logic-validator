@@ -3,14 +3,16 @@ use std::{
   ops::{BitOr, Sub},
 };
 
+use super::parser::{parse_exp, parse_rule};
 use itertools::Itertools;
-use language::{ast::exp::Exp, parser::expression::exp as parse_exp};
-use language_derivation_rule::{ast::rule::Rule, parser::rule::rule as parse_rule};
+use language::ast::exp::Exp;
+use language_derivation_rule::ast::rule::Rule;
 use lazy_static::lazy_static;
 use regex::Regex;
 use yew::Reducible;
 
 pub struct State {
+  // source of truth
   pub rows: Vec<Row>,
 
   // computed properties (memoized)
@@ -128,10 +130,10 @@ impl Reducible for State {
           .iter()
           .map(|row| {
             let mut row = row.clone();
-            if let Ok(("", exp)) = parse_exp(&row.sentence.trim()) {
+            if let Ok(exp) = parse_exp(&row.sentence.trim()) {
               row.sentence = exp.to_string();
             }
-            if let Ok(("", rule)) = parse_rule(&row.derivation.trim()) {
+            if let Ok(rule) = parse_rule(&row.derivation.trim()) {
               row.derivation = rule.to_string();
             }
             row
@@ -160,7 +162,7 @@ impl State {
       let row_num = iton(row_idx);
       // 필요하다면 parse_rule에 lru 캐시를 적용할 수 있을 것
       let dep = match parse_rule(&row.derivation.trim()) {
-        Ok(("", rule)) => match &rule {
+        Ok(rule) => match &rule {
           Rule::Premise => RowDependency::init_from([row_num]),
           Rule::AndIntro(k, l) => RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l)),
           Rule::AndExclude(k) => RowDependency::new() | acc.get(ntoi(*k)),
@@ -184,7 +186,7 @@ impl State {
             (RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l1))) - (ntoi(*l0))
           }
         },
-        Ok(_) | Err(_) => RowDependency::new_incomplete(),
+        Err(_) => RowDependency::new_incomplete(),
       };
       acc.push(dep);
       acc
@@ -205,15 +207,15 @@ impl State {
       .rows
       .iter()
       .map(|row| match parse_exp(&row.sentence.trim()) {
-        Ok(("", exp)) => (Ok(exp), &row.derivation),
-        Ok(_) | Err(_) => (Err(()), &row.derivation),
+        Ok(exp) => (Ok(exp), &row.derivation),
+        Err(_) => (Err(()), &row.derivation),
       })
       .map(|(exp, derivation)| {
         (
           exp,
           match parse_rule(derivation.trim()) {
-            Ok(("", rule)) => (Ok(rule)),
-            Ok(_) | Err(_) => (Err(())),
+            Ok(rule) => (Ok(rule)),
+            Err(_) => (Err(())),
           },
         )
       })

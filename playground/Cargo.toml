@@ -16,3 +16,4 @@ log = "0.4.6"
 wasm-logger = "0.2.0"
 regex = "1"
 lazy_static = "1.4"
+cached = { version = "0.40", features = ["wasm"] }

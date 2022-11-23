@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
+use super::super::parser::parse_exp;
 use crate::hooks::use_memo;
 use itertools::Itertools;
-use language::parser::expression::exp as parse_exp;
 use web_sys::HtmlInputElement;
 use yew::{
   classes,
@@ -38,8 +38,8 @@ pub struct RowProps {
 pub fn row(props: &RowProps) -> Html {
   let is_sentence_valid = use_memo(
     |sentence| match parse_exp(sentence.trim()) {
-      Ok(("", _)) => true,
-      _ => false,
+      Ok(_) => true,
+      Err(()) => false,
     },
     props.sentence.clone(),
   );

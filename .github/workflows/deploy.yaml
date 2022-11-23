@@ -1,0 +1,67 @@
+name: Deploy
+
+env:
+  trunk_version: "v0.16.0"
+
+on:
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2.2.0
+        with:
+          prefix-key: "v0-rust"
+          cache-targets: "false"
+
+      - name: Install trunk
+        run: |
+          wget -qO- https://github.com/thedodd/trunk/releases/download/${{ env.trunk_version }}/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf- -C /usr/local/bin
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: wasm-bindgen-cli
+
+      - name: Build
+        run: |
+          cd playground/
+          trunk build --public-url="/elementary-logic-validator/"
+
+      - name: Upload built site
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: playground/dist
+          retention-days: 7
+
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

@@ -41,7 +41,7 @@ jobs:
       - name: Build
         run: |
           cd playground/
-          trunk build
+          trunk build --release
 
       - name: Upload built site
         uses: actions/upload-pages-artifact@v1

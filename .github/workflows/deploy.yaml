@@ -42,14 +42,7 @@ jobs:
         run: |
           cd playground/
           trunk build --release
-
-      - name: Make 404.md
-        run: |
-          cat <<EOF >playground/dist/404.md
-          ---
-          permalink: /
-          ---
-          EOF
+          cp dist/index.html dist/404.html
 
       - name: Upload built site
         uses: actions/upload-pages-artifact@v1

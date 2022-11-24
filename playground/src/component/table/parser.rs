@@ -4,7 +4,7 @@ use language_derivation_rule::{ast::rule::Rule, parser::rule::rule as parse_rule
 
 #[cached(size = 64, key = "String", convert = r#"{ format!("{}", s) }"#)]
 pub fn parse_exp(s: &str) -> Result<Exp, ()> {
-  match parse_exp_base(s) {
+  match parse_exp_base(s.trim()) {
     Ok(("", exp)) => Ok(exp),
     Ok(_) | Err(_) => Err(()),
   }
@@ -12,7 +12,7 @@ pub fn parse_exp(s: &str) -> Result<Exp, ()> {
 
 #[cached(size = 64, key = "String", convert = r#"{ format!("{}", s) }"#)]
 pub fn parse_rule(s: &str) -> Result<Rule, ()> {
-  match parse_rule_base(s) {
+  match parse_rule_base(s.trim()) {
     Ok(("", rule)) => Ok(rule),
     Ok(_) | Err(_) => Err(()),
   }

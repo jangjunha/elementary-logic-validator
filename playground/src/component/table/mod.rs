@@ -25,23 +25,28 @@ pub fn table(props: &TableProps) -> Html {
     None => State::init(),
   });
 
+  let focus_deps = {
+    let dep = match state.focused_idx {
+      Some(idx) => state.deps_list.get(idx),
+      None => None,
+    };
+    match dep {
+      Some(dep) => dep.nums.clone(),
+      None => HashSet::new(),
+    }
+  };
+
   let handle_format = {
     let state = state.clone();
     Callback::from(move |()| state.dispatch(Action::Format))
   };
 
-  let consequent_deps = state
-    .deps_list
-    .last()
-    .map(|dep| dep.nums.clone())
-    .unwrap_or_else(HashSet::new);
-  let length = state.rows.len();
   html! {
-    <table class="table-fixed w-full font-mono">
+    <table class="table-fixed font-mono not-prose">
       <thead>
-        <tr>
-          <th class="w-24">{"전제번호"}</th>
-          <th class="w-8">{"#"}</th>
+        <tr class="[&>th]:p-[10px] border-b border-b-gray-400">
+          <th class="w-20">{"전제번호"}</th>
+          <th class="w-8 text-right">{"#"}</th>
           <th class="">{"식"}</th>
           <th class="w-36">{"도출규칙"}</th>
         </tr>
@@ -49,7 +54,6 @@ pub fn table(props: &TableProps) -> Html {
       <tbody>
         { for izip!(state.rows.iter(), state.deps_list.iter(), state.rule_vaildity_list.iter()).enumerate().map(|(idx, (row, dep, is_rule_valid))| {
           let num = idx + 1;
-          let is_last = num == length;
           let handle_change_sentence = {
             let state = state.clone();
             Callback::from(move |sentence: String| {
@@ -66,11 +70,21 @@ pub fn table(props: &TableProps) -> Html {
             let state = state.clone();
             Callback::from(move |_| state.dispatch(Action::Add { after_num: num }))
           };
+          let handle_focus = {
+            let state = state.clone();
+            Callback::from(move |_| state.dispatch(Action::ChangeFocus { idx: Some(num - 1) }))
+          };
+          let handle_blur = {
+            let state = state.clone();
+            Callback::from(move |_| state.dispatch(Action::ChangeFocus { idx: None }))
+          };
           html_nested! {
             <component::row::Row
               class={classes!(
-                is_last.then_some("border-t-4 border-double border-t-gray-300"),
-                consequent_deps.contains(&num).then_some("bg-gray-100"),
+                focus_deps.contains(&num)
+                  .then_some("[&>:nth-child(2)]:font-bold [&>:nth-child(2)]:text-black"),
+                state.focused_idx.map(|focused_idx| (num == (focused_idx + 1))
+                  .then_some("[&>:nth-child(1)]:font-bold [&>:nth-child(1)]:text-black")),
               )}
               readonly={props.readonly}
               num={num}
@@ -83,6 +97,8 @@ pub fn table(props: &TableProps) -> Html {
               on_change_derivation={handle_change_derivation}
               on_format={handle_format.clone()}
               on_append_row={handle_append_row}
+              on_focus={handle_focus}
+              on_blur={handle_blur}
             />
         }}) }
       </tbody>

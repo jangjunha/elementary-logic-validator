@@ -14,6 +14,7 @@ use yew::Reducible;
 pub struct State {
   // source of truth
   pub rows: Vec<Row>,
+  pub focused_idx: Option<usize>,
 
   // computed properties (memoized)
   pub deps_list: Vec<RowDependency>,
@@ -31,6 +32,7 @@ pub enum Action {
   ChangeSentence { num: usize, sentence: String },
   ChangeDerivation { num: usize, derivation: String },
   Format,
+  ChangeFocus { idx: Option<usize> },
 }
 
 impl State {
@@ -40,6 +42,7 @@ impl State {
         sentence: "".to_owned(),
         derivation: "".to_owned(),
       }],
+      focused_idx: None,
       deps_list: vec![RowDependency::new_incomplete()],
       rule_vaildity_list: vec![false],
     }
@@ -48,6 +51,7 @@ impl State {
   pub fn init_from(rows: Vec<Row>) -> Self {
     let mut state = State {
       rows,
+      focused_idx: None,
       deps_list: vec![],
       rule_vaildity_list: vec![],
     };
@@ -95,6 +99,7 @@ impl Reducible for State {
 
         let mut next = State {
           rows,
+          focused_idx: self.focused_idx,
           deps_list: vec![],
           rule_vaildity_list: vec![],
         };
@@ -111,6 +116,7 @@ impl Reducible for State {
 
         let mut next = State {
           rows,
+          focused_idx: self.focused_idx,
           deps_list: self.deps_list.clone(),
           rule_vaildity_list: vec![],
         };
@@ -126,6 +132,7 @@ impl Reducible for State {
 
         let mut next = State {
           rows,
+          focused_idx: self.focused_idx,
           deps_list: vec![],
           rule_vaildity_list: vec![],
         };
@@ -140,10 +147,10 @@ impl Reducible for State {
           .iter()
           .map(|row| {
             let mut row = row.clone();
-            if let Ok(exp) = parse_exp(&row.sentence.trim()) {
+            if let Ok(exp) = parse_exp(&row.sentence) {
               row.sentence = exp.to_string();
             }
-            if let Ok(rule) = parse_rule(&row.derivation.trim()) {
+            if let Ok(rule) = parse_rule(&row.derivation) {
               row.derivation = rule.to_string();
             }
             row
@@ -151,11 +158,20 @@ impl Reducible for State {
           .collect();
         State {
           rows,
+          focused_idx: self.focused_idx,
           deps_list: self.deps_list.clone(),
           rule_vaildity_list: self.rule_vaildity_list.clone(),
         }
         .into()
       }
+
+      Action::ChangeFocus { idx } => State {
+        rows: self.rows.clone(),
+        focused_idx: idx,
+        deps_list: self.deps_list.clone(),
+        rule_vaildity_list: self.rule_vaildity_list.clone(),
+      }
+      .into(),
     }
   }
 }
@@ -176,7 +192,7 @@ impl State {
     self.rows.iter().enumerate().fold(vec![], |mut acc, (row_idx, row)| {
       let row_num = iton(row_idx);
       // 필요하다면 parse_rule에 lru 캐시를 적용할 수 있을 것
-      let dep = match parse_rule(&row.derivation.trim()) {
+      let dep = match parse_rule(&row.derivation) {
         Ok(rule) => match &rule {
           Rule::Premise => RowDependency::init_from([row_num]),
           Rule::AndIntro(k, l) => RowDependency::new() | acc.get(ntoi(*k)) | acc.get(ntoi(*l)),
@@ -222,14 +238,14 @@ impl State {
     let items = self
       .rows
       .iter()
-      .map(|row| match parse_exp(&row.sentence.trim()) {
+      .map(|row| match parse_exp(&row.sentence) {
         Ok(exp) => (Ok(exp), &row.derivation),
         Err(_) => (Err(()), &row.derivation),
       })
       .map(|(exp, derivation)| {
         (
           exp,
-          match parse_rule(derivation.trim()) {
+          match parse_rule(derivation) {
             Ok(rule) => (Ok(rule)),
             Err(_) => (Err(())),
           },

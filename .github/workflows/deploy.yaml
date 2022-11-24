@@ -45,7 +45,7 @@ jobs:
 
       - name: Make 404.md
         run: |
-          cat <<EOF >404.md
+          cat <<EOF >playground/dist/404.md
           ---
           permalink: /
           ---

@@ -37,17 +37,18 @@ fn switch(routes: &Route) -> Html {
 fn app() -> Html {
   html! {
     <BrowserRouter>
-      <div class="prose max-w-2xl mx-auto my-16">
-        <h1>{"1차논리 검증기"}</h1>
+      <div class="prose prose-a:text-blue-500 max-w-2xl mx-auto my-16">
+        <header class="flex items-baseline justify-between">
+          <h1 class="leading-none">{"1차논리 검증기"}</h1>
+          <nav>
+            <ul class="list-none p-0 flex gap-4">
+              <li><Link<Route> to={Route::Home}>{"검증기"}</Link<Route>>{" "}</li>
+              <li><Link<Route> to={Route::HelpHome}>{"정보 및 도움말"}</Link<Route>></li>
+            </ul>
+          </nav>
+        </header>
 
         <Switch<Route> render={Switch::render(switch)} />
-
-        <footer class="my-16 border-t text-center">
-          <p>
-            <Link<Route> to={Route::Home}>{"검증기"}</Link<Route>>{" "}
-            <Link<Route> to={Route::HelpHome}>{"정보 및 도움말"}</Link<Route>>
-          </p>
-        </footer>
       </div>
     </BrowserRouter>
   }

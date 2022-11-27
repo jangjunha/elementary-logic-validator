@@ -10,7 +10,7 @@ enum HelpRoute {
   Home,
 }
 
-fn switch(routes: &HelpRoute) -> Html {
+fn switch(routes: HelpRoute) -> Html {
   match routes {
     HelpRoute::Home => html! {
       <Home />
@@ -21,6 +21,6 @@ fn switch(routes: &HelpRoute) -> Html {
 #[function_component(Help)]
 pub fn help() -> Html {
   html! {
-      <Switch<HelpRoute> render={Switch::render(switch)} />
+      <Switch<HelpRoute> render={switch} />
   }
 }

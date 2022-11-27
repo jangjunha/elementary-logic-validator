@@ -1,15 +1,14 @@
 use std::collections::HashSet;
 
 use super::super::parser::{parse_exp, parse_rule};
-use crate::hooks::use_memo;
 use itertools::Itertools;
 use web_sys::HtmlInputElement;
 use yew::{
   classes,
   events::{InputEvent, KeyboardEvent},
-  function_component, html,
+  function_component, html, use_memo,
   virtual_dom::AttrValue,
-  Callback, Properties, TargetCast,
+  Callback, Html, Properties, TargetCast,
 };
 
 #[derive(Properties, PartialEq)]

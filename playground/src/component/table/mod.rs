@@ -5,7 +5,9 @@ mod state;
 use std::collections::HashSet;
 
 use itertools::izip;
-use yew::{classes, function_component, html, html_nested, use_reducer, virtual_dom::AttrValue, Callback, Properties};
+use yew::{
+  classes, function_component, html, html_nested, use_reducer, virtual_dom::AttrValue, Callback, Html, Properties,
+};
 
 pub use self::state::Row;
 use self::state::{Action, State};

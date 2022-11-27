@@ -1,5 +1,5 @@
 use lazy_static::lazy_static;
-use yew::{function_component, html, html_nested};
+use yew::{function_component, html, html_nested, Html};
 
 use crate::component::table::{Row, Table};
 

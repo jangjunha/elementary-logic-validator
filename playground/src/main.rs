@@ -1,5 +1,4 @@
 mod component;
-mod hooks;
 mod pages;
 
 use self::pages::{Help, Home, NotFound};
@@ -19,7 +18,7 @@ pub enum Route {
   NotFound,
 }
 
-fn switch(routes: &Route) -> Html {
+fn switch(routes: Route) -> Html {
   match routes {
     Route::Home => html! {
       <Home />
@@ -48,7 +47,7 @@ fn app() -> Html {
           </nav>
         </header>
 
-        <Switch<Route> render={Switch::render(switch)} />
+        <Switch<Route> render={switch} />
       </div>
     </BrowserRouter>
   }
@@ -56,5 +55,5 @@ fn app() -> Html {
 
 fn main() {
   wasm_logger::init(wasm_logger::Config::default());
-  yew::start_app::<App>();
+  yew::Renderer::<App>::new().render();
 }

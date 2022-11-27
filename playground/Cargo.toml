@@ -9,8 +9,8 @@ edition = "2021"
 language = { path = "../language" }
 language-derivation-rule = { path = "../language-derivation-rule" }
 
-yew = "0.19"
-yew-router = "0.16"
+yew = { version = "0.20", features = ["csr"] }
+yew-router = "0.17"
 itertools = "0.10"
 web-sys = { version = "0.3", features = ["HtmlInputElement"] }
 log = "0.4.6"

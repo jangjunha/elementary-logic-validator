@@ -1,4 +1,4 @@
-use yew::{function_component, html};
+use yew::{function_component, html, Html};
 
 use crate::component::table::Table;
 

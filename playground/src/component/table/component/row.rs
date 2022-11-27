@@ -78,7 +78,7 @@ pub fn row(props: &RowProps) -> Html {
     let on_format = props.on_format.clone();
     Callback::from(move |e: KeyboardEvent| {
       match e.key().as_str() {
-        "Enter" if e.meta_key() || e.ctrl_key() => on_append_row.emit(()),
+        "Enter" if e.shift_key() => on_append_row.emit(()),
         "Enter" => on_format.emit(()),
         _ => {}
       };

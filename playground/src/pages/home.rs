@@ -12,7 +12,7 @@ pub fn home() -> Html {
       <section class="bg-slate-100 px-8 py-1 rounded-2xl">
         <h4>{"단축키"}</h4>
         <ul>
-          <li>{"Ctrl + Enter : 아래에 행 삽입"}</li>
+          <li>{"Shift + Enter : 아래에 행 삽입"}</li>
           <li>{"Enter: 전체 포맷팅"}</li>
         </ul>
         <h4>{"검증 오류"}</h4>

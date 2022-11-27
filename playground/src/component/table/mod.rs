@@ -44,7 +44,7 @@ pub fn table(props: &TableProps) -> Html {
   };
 
   html! {
-    <table class="table-fixed font-mono not-prose">
+    <table class="table-fixed font-mono not-prose h-fit">
       <thead>
         <tr class="[&>th]:p-[10px] border-b border-b-gray-400">
           <th class="w-20">{"전제번호"}</th>

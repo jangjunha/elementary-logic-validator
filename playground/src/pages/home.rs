@@ -9,7 +9,7 @@ pub fn home() -> Html {
       <section>
         <Table />
       </section>
-      <section class="bg-slate-100 px-8 py-1 rounded-2xl">
+      <section class="bg-slate-100 px-8 py-1 rounded-2xl mt-8">
         <h4>{"단축키"}</h4>
         <ul>
           <li>{"Shift + Enter : 아래에 행 삽입"}</li>

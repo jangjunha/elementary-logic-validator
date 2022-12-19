@@ -9,6 +9,7 @@ use language::ast::exp::Exp;
 use language_derivation_rule::ast::rule::Rule;
 use lazy_static::lazy_static;
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 use yew::Reducible;
 
 pub struct State {
@@ -16,12 +17,14 @@ pub struct State {
   pub rows: Vec<Row>,
   pub focused_idx: Option<usize>,
 
+  pub textbox: String,
+
   // computed properties (memoized)
   pub deps_list: Vec<RowDependency>,
   pub rule_vaildity_list: Vec<bool>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Row {
   pub sentence: String,
   pub derivation: String,
@@ -33,6 +36,9 @@ pub enum Action {
   ChangeDerivation { num: usize, derivation: String },
   Format,
   ChangeFocus { idx: Option<usize> },
+  ChangeTextbox { value: String },
+  ImportFromTextbox,
+  ExportToTextbox,
 }
 
 impl State {
@@ -43,6 +49,7 @@ impl State {
         derivation: "".to_owned(),
       }],
       focused_idx: None,
+      textbox: "".to_owned(),
       deps_list: vec![RowDependency::new_incomplete()],
       rule_vaildity_list: vec![false],
     }
@@ -52,6 +59,7 @@ impl State {
     let mut state = State {
       rows,
       focused_idx: None,
+      textbox: "".to_owned(),
       deps_list: vec![],
       rule_vaildity_list: vec![],
     };
@@ -100,6 +108,7 @@ impl Reducible for State {
         let mut next = State {
           rows,
           focused_idx: self.focused_idx,
+          textbox: self.textbox.clone(),
           deps_list: vec![],
           rule_vaildity_list: vec![],
         };
@@ -117,6 +126,7 @@ impl Reducible for State {
         let mut next = State {
           rows,
           focused_idx: self.focused_idx,
+          textbox: self.textbox.clone(),
           deps_list: self.deps_list.clone(),
           rule_vaildity_list: vec![],
         };
@@ -133,6 +143,7 @@ impl Reducible for State {
         let mut next = State {
           rows,
           focused_idx: self.focused_idx,
+          textbox: self.textbox.clone(),
           deps_list: vec![],
           rule_vaildity_list: vec![],
         };
@@ -159,6 +170,7 @@ impl Reducible for State {
         State {
           rows,
           focused_idx: self.focused_idx,
+          textbox: self.textbox.clone(),
           deps_list: self.deps_list.clone(),
           rule_vaildity_list: self.rule_vaildity_list.clone(),
         }
@@ -168,6 +180,34 @@ impl Reducible for State {
       Action::ChangeFocus { idx } => State {
         rows: self.rows.clone(),
         focused_idx: idx,
+        textbox: self.textbox.clone(),
+        deps_list: self.deps_list.clone(),
+        rule_vaildity_list: self.rule_vaildity_list.clone(),
+      }
+      .into(),
+
+      Action::ChangeTextbox { value } => State {
+        rows: self.rows.clone(),
+        focused_idx: self.focused_idx,
+        textbox: value,
+        deps_list: self.deps_list.clone(),
+        rule_vaildity_list: self.rule_vaildity_list.clone(),
+      }
+      .into(),
+
+      Action::ImportFromTextbox => serde_yaml::from_str::<Vec<Row>>(&self.textbox)
+        .map(State::init_from)
+        .map(|s| State {
+          textbox: self.textbox.clone(),
+          ..s
+        })
+        .map(|s| s.into())
+        .unwrap_or(self),
+
+      Action::ExportToTextbox => State {
+        rows: self.rows.clone(),
+        focused_idx: self.focused_idx,
+        textbox: serde_yaml::to_string(&self.rows).unwrap_or_else(|_| self.textbox.clone()),
         deps_list: self.deps_list.clone(),
         rule_vaildity_list: self.rule_vaildity_list.clone(),
       }

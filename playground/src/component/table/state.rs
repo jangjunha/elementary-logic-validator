@@ -26,7 +26,9 @@ pub struct State {
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Row {
+  #[serde(alias = "s")]
   pub sentence: String,
+  #[serde(alias = "d")]
   pub derivation: String,
 }
 

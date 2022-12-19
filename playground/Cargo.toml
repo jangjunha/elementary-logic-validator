@@ -13,6 +13,7 @@ yew = { version = "0.20", features = ["csr"] }
 yew-router = "0.17"
 itertools = "0.10"
 web-sys = { version = "0.3", features = ["HtmlInputElement"] }
+urlencoding = "2.1"
 log = "0.4.6"
 wasm-logger = "0.2.0"
 regex = "1"

@@ -1,13 +1,34 @@
-use yew::{function_component, html, Html};
+use yew::{function_component, html, use_state, Html};
+use yew_router::hooks::use_location;
 
-use crate::component::table::Table;
+use crate::component::table::{Row, Table};
 
 #[function_component(Home)]
 pub fn home() -> Html {
+  let location = use_location();
+
+  let default_rows = use_state(|| {
+    let location = match location {
+      Some(location) => location,
+      None => return None,
+    };
+    let hash = match urlencoding::decode(location.hash()) {
+      Ok(hash) => hash.trim_start_matches("#").to_owned(),
+      Err(_) => return None,
+    };
+    if hash == "" {
+      return None;
+    }
+    match serde_yaml::from_str::<Vec<Row>>(&hash) {
+      Ok(rows) => Some(rows),
+      Err(_) => None,
+    }
+  });
+
   html! {
     <>
       <section>
-        <Table />
+        <Table default_value={(*default_rows).clone()} />
       </section>
       <section class="bg-slate-100 px-8 py-1 rounded-2xl mt-8">
         <h4>{"단축키"}</h4>

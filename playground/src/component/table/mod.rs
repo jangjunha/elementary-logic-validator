@@ -70,14 +70,14 @@ pub fn table(props: &TableProps) -> Html {
   };
 
   let cls_button = classes!(
-    "bg-blue-500",
-    "hover:bg-blue-400",
+    "bg-slate-400",
+    "hover:bg-slate-300",
     "text-white",
     "font-bold",
     "px-4",
     "border-b-2",
-    "border-blue-700",
-    "hover:border-blue-500",
+    "border-slate-500",
+    "hover:border-slate-400",
   );
   html! {
     <div>
